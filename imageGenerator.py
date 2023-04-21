@@ -3,10 +3,12 @@ from chars import CharProvider
 
 class ImageGenerator:
 
+    @staticmethod
     def createImage(charName):
         char = CharProvider.charByKey(charName)
         return cv2.imread(char.path)
 
+    @staticmethod
     def generateTeamImage(charsList, username, sendToChat = False):
         images = list(map(ImageGenerator.createImage, charsList))
         team = cv2.hconcat(images)
@@ -17,6 +19,7 @@ class ImageGenerator:
         else:
             return team
 
+    @staticmethod
     def generateImageForCharacterTeamRecord(characterTeamRecord, username):
         targetTitle = cv2.imread('images/rows/target.png')
         counterTitle = cv2.imread('images/rows/counter.png')
@@ -31,7 +34,3 @@ class ImageGenerator:
         cv2.imwrite(f'result/res-{username}.png', img)
         res = open(f'result/res-{username}.png', 'rb')
         return res
-
-ImageGenerator.createImage = staticmethod(ImageGenerator.createImage)
-ImageGenerator.generateTeamImage = staticmethod(ImageGenerator.generateTeamImage)
-ImageGenerator.generateImageForCharacterTeamRecord = staticmethod(ImageGenerator.generateImageForCharacterTeamRecord)

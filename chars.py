@@ -21,12 +21,15 @@ class CharacterTeam:
             return thisMembers == otherMembers
         return False
 
+    @staticmethod
     def charName(c):
         return c.name
 
+    @staticmethod
     def teamFromChars(chars: list[Character]):
         return CharacterTeam(list(map(CharacterTeam.charName, chars)))
 
+    @staticmethod
     def characterTeamFromText(text):
         trimmed = text.replace(',', ' ')
         charKeys = " ".join(trimmed.split()).split(' ')
@@ -39,8 +42,6 @@ class CharacterTeam:
             return CharacterTeam(charsList)
         else:
             return None
-
-CharacterTeam.characterTeamFromText = staticmethod(CharacterTeam.characterTeamFromText)
 
 class CharacterTeamRecord:
     team: CharacterTeam = {}
@@ -89,9 +90,6 @@ class CharProvider:
             Character("wukong", ["wukong", "сунь укун", "укун", "обезьяна"]),
         ]
 
+    @staticmethod
     def charByKey(key):
         return next((x for x in CharProvider.definition if any(item.startswith(key.lower()) for item in x.keywords)), None)
-
-CharProvider.charByKey = staticmethod(CharProvider.charByKey)
-CharacterTeam.teamFromChars = staticmethod(CharacterTeam.teamFromChars)
-CharacterTeam.charName = staticmethod(CharacterTeam.charName)
