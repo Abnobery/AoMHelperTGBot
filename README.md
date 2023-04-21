@@ -1,11 +1,10 @@
 # AoMHelperTGBot
 
-Add .env file with content:
+### Add .env file with content:
 
 BOT_API_TOKEN=key
 
-Usage:
+### Usage:
 
-Run bot command: 
-
+Run bot command:
 /team charname charname charname charname charname
