@@ -1,14 +1,8 @@
 from aiogram import Bot, Dispatcher, executor, types, exceptions
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import logging
-import os
-import io
 from dotenv import dotenv_values
-import json
-import requests
-import aiohttp
-import base64
-from chars import Character, CharProvider, CharacterTeam, CharacterTeamRecord
+from chars import CharProvider, CharacterTeam, CharacterTeamRecord
 from imageGenerator import ImageGenerator
 
 env = {
@@ -38,12 +32,11 @@ class UserState:
     waitingForCounterPack = False
     waitingForPackToDelete = False
 
-    def __init__(self, currentTeam={}, waitingForCounterPack = False, waitingForPackToDelete = False):
+    def __init__(self, currentTeam = {}):
         self.currentTeam = currentTeam
-        self.waitingForCounterPack = waitingForCounterPack
 
 
-class StorageEntity():
+class StorageEntity:
     teams: list[CharacterTeamRecord] = []
 
     def __init__(self, teams = []):
@@ -107,9 +100,9 @@ async def echo_msg(message: types.Message):
     if username not in userStates:
         userStates[username] = UserState()
 
-    if userStates[username].waitingForCounterPack == True:
+    if userStates[username].waitingForCounterPack:
         await processAddCounterPackRequest(message, username)
-    elif userStates[username].waitingForPackToDelete == True:
+    elif userStates[username].waitingForPackToDelete:
         await processDeleteCounterPackRequest(message, username)
 
 async def processAddCounterPackRequest(message: types.Message, username):
@@ -117,7 +110,7 @@ async def processAddCounterPackRequest(message: types.Message, username):
     targetTeam = userStates[username].currentTeam
     recordToAdjust = next((x for x in storageEntity.teams if x.team == targetTeam), None)
     
-    if counter != None and recordToAdjust != None:
+    if counter is not None and recordToAdjust is not None:
         userStates[username].waitingForCounterPack = False
 
         if counter not in recordToAdjust.counterTeams:
@@ -167,7 +160,7 @@ async def process_callback_button(callback_query: types.CallbackQuery):
             logging.info(f'skipped callback touch')
 
     elif callback_query.data == "delete":
-        if userStates[username].currentTeam != None:
+        if userStates[username].currentTeam is not None:
             userStates[username].waitingForCounterPack = False
             userStates[username].waitingForPackToDelete = True
             await callback_query.message.reply("Какой контрпак удалить? (порядковый номер)")
@@ -178,10 +171,10 @@ async def process_callback_button(callback_query: types.CallbackQuery):
 
 async def showCharacterTeamForCurrentRequest(message, username):
     try:
-        if userStates[username].currentTeam != None:
+        if userStates[username].currentTeam is not None:
             recordToShow = next((x for x in storageEntity.teams if x.team == userStates[username].currentTeam), None)
-            if recordToShow == None:
-                recordToShow = CharacterTeamRecord(team = userStates[username].currentTeam)
+            if recordToShow is None:
+                recordToShow = CharacterTeamRecord(userStates[username].currentTeam)
                 storageEntity.teams.append(recordToShow)
                 
             resultImg = ImageGenerator.generateImageForCharacterTeamRecord(recordToShow, username)
@@ -209,7 +202,7 @@ async def processTextRequest(message: types.Message):
     charsList = []
     for charKey in charKeys:
         char = CharProvider.charByKey(charKey)
-        if char != None:
+        if char is not None:
             charsList.append(char.name)
 
     if len(charsList) == 5:

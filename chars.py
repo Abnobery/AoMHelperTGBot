@@ -1,5 +1,3 @@
-import logging
-
 class Character:
     name = ""
     keywords = []
@@ -27,7 +25,7 @@ class CharacterTeam:
         return c.name
 
     def teamFromChars(chars: list[Character]):
-        return CharacterTeam(members = list(map(CharacterTeam.charName, chars)))
+        return CharacterTeam(list(map(CharacterTeam.charName, chars)))
 
     def characterTeamFromText(text):
         trimmed = text.replace(',', ' ')
@@ -54,7 +52,7 @@ class CharacterTeamRecord:
 
     def __eq__(self, other):
         if isinstance(other, CharacterTeamRecord):
-            return this.team == other.team
+            return self.team == other.team
         return False
 
 class CharProvider:

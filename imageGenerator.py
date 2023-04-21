@@ -1,7 +1,5 @@
 import cv2
-import logging
-from PIL import Image, PngImagePlugin
-from chars import Character, CharProvider, CharacterTeam, CharacterTeamRecord
+from chars import CharProvider
 
 class ImageGenerator:
 
