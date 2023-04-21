@@ -8,4 +8,4 @@ Usage:
 
 Run bot command: 
 
-/team <name> <name> <name> <name> <name>
+/team charname charname charname charname charname
