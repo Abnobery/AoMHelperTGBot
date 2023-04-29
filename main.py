@@ -2,8 +2,9 @@ from aiogram import Bot, Dispatcher, executor, types, exceptions
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import logging
 from dotenv import dotenv_values
-from chars import CharProvider, CharacterTeam, CharacterTeamRecord
+from chars import Character, CharacterTeam, CharacterTeamRecord
 from imageGenerator import ImageGenerator
+from persistenceManager import PersistenceManager
 
 env = {
     **dotenv_values(".env"),
@@ -14,6 +15,7 @@ API_TOKEN = env["BOT_API_TOKEN"]
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
+storage = PersistenceManager(db=env["DB"])
 
 first_level = [
     InlineKeyboardButton("Контрпаки", callback_data="show")
@@ -37,14 +39,23 @@ class UserState:
 
 
 class StorageEntity:
+    characters: list[Character] = []
     teams: list[CharacterTeamRecord] = []
 
-    def __init__(self, teams = []):
+    def __init__(self, characters, teams = []):
         self.teams = teams
+        self.characters = characters
+
+    def charByKey(self, key):
+        return next(
+            (x for x in self.characters if any(item.startswith(key.lower()) for item in x.keywords)), None)
+
+    def charsFromKeys(self, keys):
+        return list(map(self.charByKey, keys))
 
 
 userStates = {}
-storageEntity = StorageEntity()
+storageEntity = StorageEntity(storage.getAllCharacters())
 
 # Command handler
 @dp.message_handler(commands=['team'])
@@ -106,7 +117,7 @@ async def echo_msg(message: types.Message):
         await processDeleteCounterPackRequest(message, username)
 
 async def processAddCounterPackRequest(message: types.Message, username):
-    counter = CharacterTeam.characterTeamFromText(message.text)
+    counter = CharacterTeam.characterTeamFromText(storageEntity, message.text)
     targetTeam = userStates[username].currentTeam
     recordToAdjust = next((x for x in storageEntity.teams if x.team == targetTeam), None)
     
@@ -116,7 +127,7 @@ async def processAddCounterPackRequest(message: types.Message, username):
         if counter not in recordToAdjust.counterTeams:
             recordToAdjust.counterTeams.append(counter)
 
-        resultImg = ImageGenerator.generateImageForCharacterTeamRecord(recordToAdjust, username)
+        resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
         await bot.delete_message(message.chat.id, message.message_id)
         await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
     else:
@@ -133,7 +144,7 @@ async def processDeleteCounterPackRequest(message: types.Message, username):
             if recordToAdjust != None:
                 userStates[username].waitingForPackToDelete = False
                 del recordToAdjust.counterTeams[teamNumberToDelete-1]
-                resultImg = ImageGenerator.generateImageForCharacterTeamRecord(recordToAdjust, username)
+                resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
                 await bot.delete_message(message.chat.id, message.message_id)
                 await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
         else:
@@ -177,7 +188,7 @@ async def showCharacterTeamForCurrentRequest(message, username):
                 recordToShow = CharacterTeamRecord(userStates[username].currentTeam)
                 storageEntity.teams.append(recordToShow)
                 
-            resultImg = ImageGenerator.generateImageForCharacterTeamRecord(recordToShow, username)
+            resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToShow, username)
             await bot.delete_message(message.chat.id, message.message_id)
             await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
         else:
@@ -200,13 +211,14 @@ async def processTextRequest(message: types.Message):
     charKeys = " ".join(trimmed.split()).split(' ')
 
     charsList = []
+
     for charKey in charKeys:
-        char = CharProvider.charByKey(charKey)
+        char = storageEntity.charByKey(charKey)
         if char is not None:
             charsList.append(char.name)
 
     if len(charsList) == 5:
-        res = ImageGenerator.generateTeamImage(charsList, username, sendToChat = True)
+        res = ImageGenerator.generateTeamImage(storageEntity.charsFromKeys(charsList), username, sendToChat=True)
         userStates[username].currentTeam = CharacterTeam(charsList)
         await bot.send_photo(chat_id=message.chat.id, photo=res, reply_markup=inline_keyboard_first)
     else:

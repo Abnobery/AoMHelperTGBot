@@ -1,12 +1,10 @@
 import cv2
-from chars import CharProvider
 
 class ImageGenerator:
 
     @staticmethod
-    def createImage(charName):
-        char = CharProvider.charByKey(charName)
-        return cv2.imread(char.path)
+    def createImage(character):
+        return cv2.imread(character.path)
 
     @staticmethod
     def generateTeamImage(charsList, username, sendToChat = False):
@@ -20,15 +18,17 @@ class ImageGenerator:
             return team
 
     @staticmethod
-    def generateImageForCharacterTeamRecord(characterTeamRecord, username):
+    def generateImageForCharacterTeamRecord(storageEntity, characterTeamRecord, username):
         targetTitle = cv2.imread('images/rows/target.png')
         counterTitle = cv2.imread('images/rows/counter.png')
+        teamCharList = storageEntity.charsFromKeys(characterTeamRecord.team.members)
 
-        team = ImageGenerator.generateTeamImage(characterTeamRecord.team.members, username)
+        team = ImageGenerator.generateTeamImage(teamCharList, username)
 
         counters = []
         for counterTeam in characterTeamRecord.counterTeams:
-            counters.append(ImageGenerator.generateTeamImage(counterTeam.members, username))
+            counterCharList = storageEntity.charsFromKeys(counterTeam.members)
+            counters.append(ImageGenerator.generateTeamImage(counterCharList, username))
 
         img = cv2.vconcat([targetTitle, team, counterTitle] + counters)
         cv2.imwrite(f'result/res-{username}.png', img)
