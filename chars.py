@@ -17,8 +17,8 @@ class CharacterTeam:
 
     def __eq__(self, other):
         if isinstance(other, CharacterTeam):
-            thisMembers = list(self.members[0]) + sorted(self.members[1:])
-            otherMembers = list(other.members[0]) + sorted(other.members[1:])
+            thisMembers = [self.members[0]] + sorted(self.members[1:])
+            otherMembers = [other.members[0]] + sorted(other.members[1:])
             return thisMembers == otherMembers
         return False
 

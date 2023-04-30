@@ -2,9 +2,9 @@ from aiogram import Bot, Dispatcher, executor, types, exceptions
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import logging
 from dotenv import dotenv_values
-from chars import Character, CharacterTeam, CharacterTeamRecord
+from chars import CharacterTeam, CharacterTeamRecord
 from imageGenerator import ImageGenerator
-from persistenceManager import PersistenceManager
+from persistenceManager import PersistenceManager, StorageEntity
 
 env = {
     **dotenv_values(".env"),
@@ -38,24 +38,8 @@ class UserState:
         self.currentTeam = currentTeam
 
 
-class StorageEntity:
-    characters: list[Character] = []
-    teams: list[CharacterTeamRecord] = []
-
-    def __init__(self, characters, teams = []):
-        self.teams = teams
-        self.characters = characters
-
-    def charByKey(self, key):
-        return next(
-            (x for x in self.characters if any(item.startswith(key.lower()) for item in x.keywords)), None)
-
-    def charsFromKeys(self, keys):
-        return list(map(self.charByKey, keys))
-
-
 userStates = {}
-storageEntity = StorageEntity(storage.getAllCharacters())
+storageEntity = storage.getStorageEntity()
 
 # Command handler
 @dp.message_handler(commands=['team'])
@@ -126,6 +110,7 @@ async def processAddCounterPackRequest(message: types.Message, username):
 
         if counter not in recordToAdjust.counterTeams:
             recordToAdjust.counterTeams.append(counter)
+            storage.addCounterTeamForRecord(counter, recordToAdjust)
 
         resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
         await bot.delete_message(message.chat.id, message.message_id)
@@ -143,6 +128,7 @@ async def processDeleteCounterPackRequest(message: types.Message, username):
         if len(recordToAdjust.counterTeams) >= teamNumberToDelete:
             if recordToAdjust != None:
                 userStates[username].waitingForPackToDelete = False
+                storage.deleteCounterTeamForRecord(recordToAdjust.counterTeams[teamNumberToDelete-1], recordToAdjust)
                 del recordToAdjust.counterTeams[teamNumberToDelete-1]
                 resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
                 await bot.delete_message(message.chat.id, message.message_id)
@@ -187,6 +173,7 @@ async def showCharacterTeamForCurrentRequest(message, username):
             if recordToShow is None:
                 recordToShow = CharacterTeamRecord(userStates[username].currentTeam)
                 storageEntity.teams.append(recordToShow)
+                storage.addCharacterTeam(userStates[username].currentTeam)
                 
             resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToShow, username)
             await bot.delete_message(message.chat.id, message.message_id)
