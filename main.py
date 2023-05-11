@@ -4,7 +4,7 @@ import logging
 from dotenv import dotenv_values
 from chars import CharacterTeam, CharacterTeamRecord
 from imageGenerator import ImageGenerator
-from persistenceManager import PersistenceManager, StorageEntity
+from persistenceManager import PersistenceManager
 
 env = {
     **dotenv_values(".env"),

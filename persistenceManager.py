@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-from chars import Character, CharacterTeamRecord, CharacterTeam, CharProvider
+from chars import Character, CharacterTeamRecord, CharacterTeam
 import logging
 
 Base = declarative_base()
