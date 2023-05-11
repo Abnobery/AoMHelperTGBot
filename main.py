@@ -76,7 +76,8 @@ async def team_cmd(message: types.Message):
         if len(storageEntity.teams) > 0:
             teams = []
             for idx, x in enumerate(range(len(storageEntity.teams))):
-                teams.append(f'{idx+1}. '+', '.join(storageEntity.teams[x].team.members) + f'; ({len(storageEntity.teams[x].counterTeams)})')
+                if len(storageEntity.teams[x].counterTeams) > 0:
+                    teams.append(f'{idx+1}. '+', '.join(storageEntity.teams[x].team.members) + f'; ({len(storageEntity.teams[x].counterTeams)})')
             await message.reply('\n'.join(teams))
         else:
             await message.reply("В базе нет записей")
