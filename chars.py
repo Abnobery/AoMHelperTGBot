@@ -32,8 +32,11 @@ class CharacterTeam:
 
     @staticmethod
     def characterTeamFromText(storageEntity, text):
-        trimmed = text.replace(',', ' ')
-        charKeys = " ".join(trimmed.split()).split(' ')
+        if "," in text:
+            trimmed = text.replace(' ', '').replace(',', ' ')
+            charKeys = " ".join(trimmed.split()).split(' ')
+        else:
+            charKeys = " ".join(text.split()).split(' ')
         charsList = []
         for charKey in charKeys:
             char = storageEntity.charByKey(charKey)

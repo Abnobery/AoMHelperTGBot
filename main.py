@@ -109,12 +109,18 @@ async def processAddCounterPackRequest(message: types.Message, username):
         userStates[username].waitingForCounterPack = False
 
         if counter not in recordToAdjust.counterTeams:
-            recordToAdjust.counterTeams.append(counter)
-            storage.addCounterTeamForRecord(counter, recordToAdjust)
-
-        resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
-        await bot.delete_message(message.chat.id, message.message_id)
-        await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
+            saveSuccess = storage.addCounterTeamForRecord(counter, recordToAdjust)
+            if saveSuccess:
+                recordToAdjust.counterTeams.append(counter)
+                resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
+                await bot.delete_message(message.chat.id, message.message_id)
+                await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
+            else:
+                await message.reply("Ошибка ввода, попробуйте еще раз")
+        else:
+            resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
+            await bot.delete_message(message.chat.id, message.message_id)
+            await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
     else:
         await message.reply("Ошибка ввода, попробуйте еще раз")
 
@@ -128,11 +134,16 @@ async def processDeleteCounterPackRequest(message: types.Message, username):
         if len(recordToAdjust.counterTeams) >= teamNumberToDelete:
             if recordToAdjust != None:
                 userStates[username].waitingForPackToDelete = False
-                storage.deleteCounterTeamForRecord(recordToAdjust.counterTeams[teamNumberToDelete-1], recordToAdjust)
-                del recordToAdjust.counterTeams[teamNumberToDelete-1]
-                resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
-                await bot.delete_message(message.chat.id, message.message_id)
-                await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
+                success = storage.deleteCounterTeamForRecord(recordToAdjust.counterTeams[teamNumberToDelete-1], recordToAdjust)
+                if success:
+                    del recordToAdjust.counterTeams[teamNumberToDelete-1]
+                    resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
+                    await bot.delete_message(message.chat.id, message.message_id)
+                    await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
+                else:
+                    await message.reply("Произощла ошибка, попробуйте еще раз")
+            else:
+                await message.reply("Несуществующий порядковый номер, попробуйте еще раз")
         else:
             await message.reply("Несуществующий порядковый номер, попробуйте еще раз")
     except Exception as ex:
@@ -172,12 +183,20 @@ async def showCharacterTeamForCurrentRequest(message, username):
             recordToShow = next((x for x in storageEntity.teams if x.team == userStates[username].currentTeam), None)
             if recordToShow is None:
                 recordToShow = CharacterTeamRecord(userStates[username].currentTeam)
-                storageEntity.teams.append(recordToShow)
-                storage.addCharacterTeam(userStates[username].currentTeam)
-                
-            resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToShow, username)
-            await bot.delete_message(message.chat.id, message.message_id)
-            await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
+                saveSuccess = storage.addCharacterTeam(userStates[username].currentTeam)
+                if saveSuccess:
+                    storageEntity.teams.append(recordToShow)
+                    resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToShow,
+                                                                                   username)
+                    await bot.delete_message(message.chat.id, message.message_id)
+                    await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
+                else:
+                    await message.reply("Произошла ошибка")
+            else:
+                resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToShow,
+                                                                               username)
+                await bot.delete_message(message.chat.id, message.message_id)
+                await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
         else:
             await message.reply("Произошла ошибка")
     except Exception as ex:
@@ -194,8 +213,11 @@ async def processTextRequest(message: types.Message):
         username = message.from_user.username
 
     request = message.get_args()
-    trimmed = request.replace(',', ' ')
-    charKeys = " ".join(trimmed.split()).split(' ')
+    if "," in request:
+        trimmed = request.replace(' ', '').replace(',', ' ')
+        charKeys = " ".join(trimmed.split()).split(' ')
+    else:
+        charKeys = " ".join(request.split()).split(' ')
 
     charsList = []
 

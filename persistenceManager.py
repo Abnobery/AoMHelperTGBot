@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-from chars import Character, CharacterTeamRecord, CharacterTeam
+from chars import Character, CharacterTeamRecord, CharacterTeam, CharProvider
 import logging
 
 Base = declarative_base()
@@ -99,9 +99,12 @@ class PersistenceManager:
                 dbTeamRecord = DbTeam(id=nextId, leader=team[0], slot2=team[1], slot3=team[2], slot4=team[3], slot5=team[4])
                 self.storage.add(dbTeamRecord)
                 self.storage.commit()
-                logging.info(f'successfully added characted team')
+                return True
+            else:
+                return False
         except Exception as ex:
             logging.error(f'error: addCharacterTeamRecord: {ex}')
+            return False
 
     def getTeamId(self, team):
         teamRecord = self.storage.query(DbTeam).filter_by(
@@ -140,8 +143,12 @@ class PersistenceManager:
                 dbTeamCountersRecord = DbTeamCounters(id=nextCounterId, targetteamid=recordTeamId, counterteamid=teamId)
                 self.storage.add(dbTeamCountersRecord)
                 self.storage.commit()
+                return True
+            else:
+                return False
         except Exception as ex:
             logging.error(f'error: addCounterTeamForRecord: {ex}')
+            return False
 
     def deleteCounterTeamForRecord(self, team: CharacterTeam, teamRecord: CharacterTeamRecord):
         try:
@@ -153,8 +160,10 @@ class PersistenceManager:
                 counterteamid=teamId
             ).delete()
             self.storage.commit()
+            return True
         except Exception as ex:
             logging.error(f'error: addCharacterTeamRecord: {ex}')
+            return False
 
     def getCharacterTeamRecords(self):
         try:
