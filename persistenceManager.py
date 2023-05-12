@@ -172,6 +172,15 @@ class PersistenceManager:
             logging.error(f'error in retrieving characters: {ex}')
             return []
 
+    def getEffectiveTeamRecordsForTeam(self, team: CharacterTeam):
+        try:
+            sortedTeam = [team.members[0]] + sorted(team.members[1:])
+            teamId = self.getTeamId(sortedTeam)
+            return self.teamEffectiveVersusTeams(teamId)
+        except Exception as ex:
+            logging.error(f'error in retrieving effective characters: {ex}')
+            return []
+
     def characterTeamRecordForTeam(self, team):
         sqlStatement = 'select leader, slot2, slot3, slot4, slot5 from teams left join ' \
                        '(select counter_teams.counterteamid from teams left join ' \
@@ -181,6 +190,16 @@ class PersistenceManager:
         counterTeams = self.storage.execute(text(sqlStatement)).all()
         counterCharTeams = list(map(lambda x: CharacterTeam(x), counterTeams))
         return CharacterTeamRecord(CharacterTeam(team[1:]), counterCharTeams)
+
+    def teamEffectiveVersusTeams(self, teamId):
+        sqlStatement = 'select leader, slot2, slot3, slot4, slot5 from teams left join ' \
+                       '(select counter_teams.targetteamid from counter_teams ' \
+                       f'where counter_teams.counterteamid = {teamId})' \
+                       'as effective on teams.id = effective.targetteamid ' \
+                       'where teams.id = effective.targetteamid'
+        effectiveTeams = self.storage.execute(text(sqlStatement)).all()
+        effectiveCharTeams = list(map(lambda x: CharacterTeam(x), effectiveTeams))
+        return effectiveCharTeams
 
     def getStorageEntity(self):
         try:
