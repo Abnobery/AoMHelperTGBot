@@ -1,3 +1,5 @@
+import os
+
 from aiogram import Bot, Dispatcher, executor, types, exceptions
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import logging
@@ -11,11 +13,13 @@ env = {
    # **dotenv_values(".env.dev"),  # override
 }
 
-API_TOKEN = env["BOT_API_TOKEN"]
+# API_TOKEN = env["BOT_API_TOKEN"]
+API_TOKEN = os.environ['BOT_API_TOKEN']
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
-storage = PersistenceManager(db=env["DB"])
+# storage = PersistenceManager(db=env["DB"])
+storage = PersistenceManager(db=os.environ['DB'])
 
 first_level = [
     InlineKeyboardButton("Контрпаки", callback_data="show")
