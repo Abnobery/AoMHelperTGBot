@@ -77,9 +77,13 @@ async def team_cmd(message: types.Message):
             teams = []
             anyTeamExists = False
             counter = 1
-            for idx, x in enumerate(range(len(storageEntity.teams))):
-                if len(storageEntity.teams[x].counterTeams) > 0:
-                    teams.append(f'{counter}. '+', '.join(storageEntity.teams[x].team.members) + f'; ({len(storageEntity.teams[x].counterTeams)})')
+            if len(storageEntity.teams) > 1:
+                sortedTeams = sorted(storageEntity.teams, key=lambda y: y.team.members[0], reverse=False)
+            else:
+                sortedTeams = storageEntity.teams
+            for idx, x in enumerate(range(len(sortedTeams))):
+                if len(sortedTeams[x].counterTeams) > 0:
+                    teams.append(f'{counter}. '+', '.join(sortedTeams[x].team.members) + f'; ({len(sortedTeams[x].counterTeams)})')
                     counter += 1
                     anyTeamExists = True
             if anyTeamExists:
