@@ -34,3 +34,19 @@ class ImageGenerator:
         cv2.imwrite(f'result/res-{username}.png', img)
         res = open(f'result/res-{username}.png', 'rb')
         return res
+
+    @staticmethod
+    def generateEffectiveTeamsImageForCharacterTeamRecord(storageEntity, characterTeamRecord, effectiveTeams, username):
+        effectiveTitle = cv2.imread('images/rows/effective.png')
+        teamCharList = storageEntity.charsFromKeys(characterTeamRecord.team.members)
+
+        team = ImageGenerator.generateTeamImage(teamCharList, username)
+        effTeams = []
+        for effectiveTeam in effectiveTeams[:10]:
+            teamCharList = storageEntity.charsFromKeys(effectiveTeam.members)
+            effTeams.append(ImageGenerator.generateTeamImage(teamCharList, username))
+
+        img = cv2.vconcat([team, effectiveTitle] + effTeams)
+        cv2.imwrite(f'result/res_eff-{username}.png', img)
+        res = open(f'result/res_eff-{username}.png', 'rb')
+        return res

@@ -18,7 +18,8 @@ dp = Dispatcher(bot)
 storage = PersistenceManager(db=env["DB"])
 
 first_level = [
-    InlineKeyboardButton("Контрпаки", callback_data="show")
+    InlineKeyboardButton("Контрпаки", callback_data="show"),
+    InlineKeyboardButton("Эффективен", callback_data="effective")
 ]
 second_level = [
     InlineKeyboardButton("Добавить контрпак", callback_data="add"),
@@ -210,7 +211,7 @@ async def processDeleteCounterPackRequest(message: types.Message, username):
         await message.reply("Несуществующий порядковый номер, попробуйте еще раз")
 
 
-@dp.callback_query_handler(lambda c: c.data == 'show' or c.data == 'add' or c.data == 'delete')
+@dp.callback_query_handler(lambda c: c.data == 'show' or c.data == 'add' or c.data == 'delete' or c.data == 'effective')
 async def process_callback_button(callback_query: types.CallbackQuery):
     if callback_query.from_user.username is None:
         username = f'id@{callback_query.from_user.id}'
@@ -243,7 +244,43 @@ async def process_callback_button(callback_query: types.CallbackQuery):
 
     elif callback_query.data == "show":
         await showCharacterTeamForCurrentRequest(callback_query.message, username)
+    elif callback_query.data == "effective":
+        await showEffectiveTeamsForCurrentRequest(callback_query.message, username)
 
+async def showEffectiveTeamsForCurrentRequest(message, username):
+    global storageEntity
+    try:
+        if userStates[username].currentTeam is not None:
+            recordToShow = next((x for x in storageEntity.teams if x.team == userStates[username].currentTeam), None)
+            if recordToShow is None:
+                recordToShow = CharacterTeamRecord(userStates[username].currentTeam)
+                saveSuccess = storage.addCharacterTeam(userStates[username].currentTeam)
+                if saveSuccess:
+                    storageEntity = storage.updateStorageEntity(storageEntity)
+                    effectiveTeams = storage.getEffectiveTeamRecordsForTeam(recordToShow.team)
+                    if len(effectiveTeams) > 0:
+                        resultImg = ImageGenerator.generateEffectiveTeamsImageForCharacterTeamRecord(storageEntity, recordToShow,
+                                                                                   effectiveTeams, username)
+                        await bot.delete_message(message.chat.id, message.message_id)
+                        await bot.send_photo(chat_id=message.chat.id, photo=resultImg)
+                    else:
+                        await message.reply("Эта команда на данный момент не встречается среди контрпаков")
+                else:
+                    await message.reply("Произошла ошибка")
+            else:
+                effectiveTeams = storage.getEffectiveTeamRecordsForTeam(recordToShow.team)
+                if len(effectiveTeams) > 0:
+                    resultImg = ImageGenerator.generateEffectiveTeamsImageForCharacterTeamRecord(storageEntity, recordToShow,
+                                                                               effectiveTeams, username)
+                    await bot.delete_message(message.chat.id, message.message_id)
+                    await bot.send_photo(chat_id=message.chat.id, photo=resultImg)
+                else:
+                    await message.reply("Эта команда на данный момент не встречается среди контрпаков")
+        else:
+            await message.reply("Произошла ошибка")
+    except Exception as ex:
+        logging.error(f'showEffectiveTeamsForCurrentRequest: {ex}')
+        await message.reply("Произошла ошибка")
 
 async def showCharacterTeamForCurrentRequest(message, username):
     global storageEntity
