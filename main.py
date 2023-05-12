@@ -123,6 +123,7 @@ async def echo_msg(message: types.Message):
         await processDeleteCounterPackRequest(message, username)
 
 async def processAddCounterPackRequest(message: types.Message, username):
+    global storageEntity
     counter = CharacterTeam.characterTeamFromText(storageEntity, message.text)
     targetTeam = userStates[username].currentTeam
     recordToAdjust = next((x for x in storageEntity.teams if x.team == targetTeam), None)
@@ -134,6 +135,7 @@ async def processAddCounterPackRequest(message: types.Message, username):
             saveSuccess = storage.addCounterTeamForRecord(counter, recordToAdjust)
             if saveSuccess:
                 recordToAdjust.counterTeams.append(counter)
+                storageEntity = storage.updateStorageEntity(storageEntity)
                 resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
                 await bot.delete_message(message.chat.id, message.message_id)
                 await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
@@ -148,9 +150,9 @@ async def processAddCounterPackRequest(message: types.Message, username):
 
 
 async def processDeleteCounterPackRequest(message: types.Message, username):
+    global storageEntity
     targetTeam = userStates[username].currentTeam
     recordToAdjust = next((x for x in storageEntity.teams if x.team == targetTeam), None)
-
     try:
         teamNumberToDelete = int(message.text)
         if len(recordToAdjust.counterTeams) >= teamNumberToDelete:
@@ -159,6 +161,7 @@ async def processDeleteCounterPackRequest(message: types.Message, username):
                 success = storage.deleteCounterTeamForRecord(recordToAdjust.counterTeams[teamNumberToDelete-1], recordToAdjust)
                 if success:
                     del recordToAdjust.counterTeams[teamNumberToDelete-1]
+                    storageEntity = storage.updateStorageEntity(storageEntity)
                     resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToAdjust, username)
                     await bot.delete_message(message.chat.id, message.message_id)
                     await bot.send_photo(chat_id=message.chat.id, photo=resultImg, reply_markup=inline_keyboard_second)
@@ -200,6 +203,7 @@ async def process_callback_button(callback_query: types.CallbackQuery):
 
 
 async def showCharacterTeamForCurrentRequest(message, username):
+    global storageEntity
     try:
         if userStates[username].currentTeam is not None:
             recordToShow = next((x for x in storageEntity.teams if x.team == userStates[username].currentTeam), None)
@@ -207,7 +211,7 @@ async def showCharacterTeamForCurrentRequest(message, username):
                 recordToShow = CharacterTeamRecord(userStates[username].currentTeam)
                 saveSuccess = storage.addCharacterTeam(userStates[username].currentTeam)
                 if saveSuccess:
-                    storageEntity.teams.append(recordToShow)
+                    storageEntity = storage.updateStorageEntity(storageEntity)
                     resultImg = ImageGenerator.generateImageForCharacterTeamRecord(storageEntity, recordToShow,
                                                                                    username)
                     await bot.delete_message(message.chat.id, message.message_id)
