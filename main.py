@@ -75,14 +75,31 @@ async def team_cmd(message: types.Message):
     try:
         if len(storageEntity.teams) > 0:
             teams = []
+            anyTeamExists = False
             for idx, x in enumerate(range(len(storageEntity.teams))):
                 if len(storageEntity.teams[x].counterTeams) > 0:
                     teams.append(f'{idx+1}. '+', '.join(storageEntity.teams[x].team.members) + f'; ({len(storageEntity.teams[x].counterTeams)})')
-            await message.reply('\n'.join(teams))
+                    anyTeamExists = True
+            if anyTeamExists:
+                await message.reply('\n'.join(teams))
+            else:
+                await message.reply("В базе нет записей")
         else:
             await message.reply("В базе нет записей")
     except Exception as ex:
         await message.reply(ex)
+
+@dp.message_handler(commands=['help'])
+async def help_cmd(message: types.Message):
+    await message.reply("""Бот выдает контрпаки по запросу, к примеру используйте команду /team и перечислите список персонажей через запятую, либо отделяя пробелом (имена в два слова в этом случае пишите слитно). Для каждого персонажа есть сокращения для удобного ввода.
+
+Например:
+
+/team найя, аза, локхир, чжу бацзе, рой
+
+/team укун жар-птица чжубацзе рок цуна
+
+В режиме редактирования после запроса на добавление контрпака надо перечислить команду так же как при первом шаге, но без команды /team""")
 
 
 # Message handler for all other messages

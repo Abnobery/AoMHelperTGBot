@@ -122,13 +122,12 @@ class PersistenceManager:
     def addCounterTeamForRecord(self, team: CharacterTeam, teamRecord: CharacterTeamRecord):
         try:
             sortedTeam = [team.members[0]] + sorted(team.members[1:])
-            recordTeamId = self.getTeamId(teamRecord.team.members)
+            sortedRecordTeam = [teamRecord.team.members[0]] + sorted(teamRecord.team.members[1:])
+            recordTeamId = self.getTeamId(sortedRecordTeam)
             teamId = self.getTeamId(sortedTeam)
-            logging.info(f'recordTeamId, teamId:  {recordTeamId}, {teamId}')
             if teamId == -1:
                 self.addCharacterTeam(CharacterTeam(sortedTeam))
                 teamId = self.getTeamId(sortedTeam)
-            logging.info(f'teamId: {teamId}')
 
             counterTeamExists = self.storage.query(DbTeamCounters).filter_by(
                 targetteamid=recordTeamId,
