@@ -76,9 +76,11 @@ async def team_cmd(message: types.Message):
         if len(storageEntity.teams) > 0:
             teams = []
             anyTeamExists = False
+            counter = 1
             for idx, x in enumerate(range(len(storageEntity.teams))):
                 if len(storageEntity.teams[x].counterTeams) > 0:
-                    teams.append(f'{idx+1}. '+', '.join(storageEntity.teams[x].team.members) + f'; ({len(storageEntity.teams[x].counterTeams)})')
+                    teams.append(f'{counter}. '+', '.join(storageEntity.teams[x].team.members) + f'; ({len(storageEntity.teams[x].counterTeams)})')
+                    counter += 1
                     anyTeamExists = True
             if anyTeamExists:
                 await message.reply('\n'.join(teams))
