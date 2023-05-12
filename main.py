@@ -43,6 +43,11 @@ userStates = {}
 storageEntity = storage.getStorageEntity()
 
 # Command handler
+
+@dp.message_handler(commands=['start'])
+async def start_cmd(message: types.Message):
+    await message.reply("Откройте меню чтобы начать работать с ботом")
+
 @dp.message_handler(commands=['team'])
 async def team_cmd(message: types.Message):
     if message.from_user.username is None:
