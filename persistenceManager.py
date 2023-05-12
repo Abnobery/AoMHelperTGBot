@@ -190,3 +190,11 @@ class PersistenceManager:
         except Exception as ex:
             logging.error(f'error in retrieving storage entity: {ex}')
             return StorageEntity([])
+
+    def updateStorageEntity(self, entity: StorageEntity):
+        try:
+            teamRecords = self.getCharacterTeamRecords()
+            return StorageEntity(entity.characters, teamRecords)
+        except Exception as ex:
+            logging.error(f'error in retrieving storage entity: {ex}')
+            return entity
