@@ -5,6 +5,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import logging
 from dotenv import dotenv_values
 from chars import CharacterTeam, CharacterTeamRecord
+from charsHelper import CharsHelper
 from imageGenerator import ImageGenerator
 from persistenceManager import PersistenceManager
 
@@ -135,6 +136,29 @@ async def help_cmd(message: types.Message):
 /team укун жар-птица чжубацзе рок цуна
 
 В режиме редактирования после запроса на добавление контрпака надо перечислить персонажей так же как при первом шаге, но без префикса /team""")
+
+@dp.message_handler(commands=['char_list'])
+async def char_list_cmd(message: types.Message):
+    global storageEntity
+    messageText = ""
+    for group in CharsHelper.allCharacters(storageEntity):
+        messageText += f"""{group["title"]}:
+{', '.join(str(x.name + f' ({get_longest_keyword(x.keywords, x.name)})') for x in group["list"])}
+
+"""
+    await message.reply(messageText)
+
+def get_longest_keyword(lst, exclude):
+    if not lst:
+        return ''
+    max_str = lst[0]
+    if lst[0] == exclude:
+        max_str = lst[1]
+        # list is not empty
+    for x in lst:
+        if len(x) > len(max_str) and exclude != x:
+            max_str = x
+    return max_str
 
 
 # Message handler for all other messages
