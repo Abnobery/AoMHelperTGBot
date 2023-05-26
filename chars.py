@@ -1,10 +1,12 @@
 class Character:
     name = ""
+    factionid = 0
     keywords = []
     path = ""
 
-    def __init__(self, name, keywords=[]):
+    def __init__(self, name, factionid, keywords=[]):
         self.name = name
+        self.factionid = factionid
         self.keywords = keywords
         self.path = f'images/chars/{name}.png'
 
@@ -60,3 +62,11 @@ class CharacterTeamRecord:
         if isinstance(other, CharacterTeamRecord):
             return self.team == other.team
         return False
+
+class Faction:
+    id = 0
+    title = ""
+
+    def __init__(self, id, title):
+        self.id = id
+        self.title = title

@@ -5,7 +5,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import logging
 from dotenv import dotenv_values
 from chars import CharacterTeam, CharacterTeamRecord
-from charsHelper import CharsHelper
 from imageGenerator import ImageGenerator
 from persistenceManager import PersistenceManager
 
@@ -141,12 +140,13 @@ async def help_cmd(message: types.Message):
 async def char_list_cmd(message: types.Message):
     global storageEntity
     messageText = ""
-    for group in CharsHelper.allCharacters(storageEntity):
-        messageText += f"""{group["title"]}:
-{', '.join(str(x.name + f' ({get_longest_keyword(x.keywords, x.name)})') for x in group["list"])}
+    for faction in storageEntity.factions:
+        heroes = storageEntity.charsInFaction(faction.id)
+        messageText += f"""<i>{faction.title}</i>:
+{', '.join(str(x.name + f' ({get_longest_keyword(x.keywords, x.name)})') for x in heroes)}
 
 """
-    await message.reply(messageText)
+    await message.reply(messageText, parse_mode=types.ParseMode.HTML)
 
 def get_longest_keyword(lst, exclude):
     if not lst:
