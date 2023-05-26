@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-from chars import Character, CharacterTeamRecord, CharacterTeam
+from chars import Character, CharacterTeamRecord, CharacterTeam, Faction
 import logging
 
 Base = declarative_base()
@@ -12,41 +12,52 @@ logging.basicConfig(level=logging.INFO)
 class StorageEntity:
     characters: list[Character] = []
     teams: list[CharacterTeamRecord] = []
+    factions: list[Faction] = []
 
-    def __init__(self, characters, teams = []):
+    def __init__(self, characters, teams = [], factions = []):
         self.teams = teams
         self.characters = characters
+        self.factions = factions
 
     def charByKey(self, key):
         return next(
             (x for x in self.characters if any(item.startswith(key.lower()) for item in x.keywords)), None)
 
+    def charsInFaction(self, faction):
+        return filter(lambda item: item.factionid == faction, self.characters)
+
     def charsFromKeys(self, keys):
         return list(map(self.charByKey, keys))
 
-class DbChar(Base):
-    __tablename__ = "chars"
+class DbHero(Base):
+    __tablename__ = "heroes"
     charname = Column(String, primary_key=True, nullable=False)
+    factionid = Column(Integer, ForeignKey("factions.id"), nullable=False)
+
+class DbFactions(Base):
+    __tablename__ = "factions"
+    id = Column(Integer, primary_key=True, nullable=False)
+    title = Column(String, nullable=False)
 
 class DbKeyword(Base):
-    __tablename__ = "char_keywords"
+    __tablename__ = "heroes_keywords"
     keyword = Column(String, primary_key=True, nullable=False)
-    charname = Column(String, ForeignKey("chars.charname"), nullable=False)
+    charname = Column(String, ForeignKey("heroes.charname"), nullable=False)
 
 class DbTeam(Base):
-    __tablename__ = "teams"
+    __tablename__ = "heroes_teams"
     id = Column(Integer, primary_key=True, nullable=False)
-    leader = Column(String, ForeignKey("chars.charname"), nullable=False)
-    slot2 = Column(String, ForeignKey("chars.charname"), nullable=False)
-    slot3 = Column(String, ForeignKey("chars.charname"), nullable=False)
-    slot4 = Column(String, ForeignKey("chars.charname"), nullable=False)
-    slot5 = Column(String, ForeignKey("chars.charname"), nullable=False)
+    leader = Column(String, ForeignKey("heroes.charname"), nullable=False)
+    slot2 = Column(String, ForeignKey("heroes.charname"), nullable=False)
+    slot3 = Column(String, ForeignKey("heroes.charname"), nullable=False)
+    slot4 = Column(String, ForeignKey("heroes.charname"), nullable=False)
+    slot5 = Column(String, ForeignKey("heroes.charname"), nullable=False)
 
 class DbTeamCounters(Base):
-    __tablename__ = "counter_teams"
+    __tablename__ = "heroes_counter_teams"
     id = Column(Integer, primary_key=True, nullable=False)
-    targetteamid = Column(Integer, ForeignKey("teams.id"), nullable=False)
-    counterteamid = Column(Integer, ForeignKey("teams.id"), nullable=False)
+    targetteamid = Column(Integer, ForeignKey("heroes_teams.id"), nullable=False)
+    counterteamid = Column(Integer, ForeignKey("heroes_teams.id"), nullable=False)
 
 class PersistenceManager:
     storage: sessionmaker
@@ -57,9 +68,9 @@ class PersistenceManager:
 
     def addCharacter(self, character: Character):
         try:
-            notexists = self.storage.query(DbChar).filter_by(charname=character.name).first() is None
+            notexists = self.storage.query(DbHero).filter_by(charname=character.name).first() is None
             if notexists:
-                dbChar = DbChar(charname=character.name)
+                dbChar = DbHero(charname=character.name, factionid=character.factionid)
                 self.storage.add(dbChar)
                 for keyword in character.keywords:
                     keywordnotexists = self.storage.query(DbKeyword).filter_by(charname=keyword, keyword=character.name).first() is None
@@ -74,16 +85,26 @@ class PersistenceManager:
 
     def getAllCharacters(self):
         try:
-            chars = self.storage.query(DbChar.charname).all()
+            chars = self.storage.query(DbHero.charname, DbHero.factionid).all()
             charnames = [charname[0] for charname in chars]
             charList: list[Character] = []
-            for char in charnames:
+            for idx, char in enumerate(charnames):
                 keywords = self.storage.query(DbKeyword.keyword).filter(DbKeyword.charname == char).all()
                 keywordsStr = [keyword[0] for keyword in keywords]
-                charList.append(Character(char, keywordsStr))
+                faction = chars[idx][1]
+                charList.append(Character(char, faction, keywordsStr))
             return charList
         except Exception as ex:
             logging.error(f'error in retrieving characters: {ex}')
+            return []
+
+    def getAllFactions(self):
+        try:
+            factions = self.storage.query(DbFactions.id, DbFactions.title).all()
+            factionsList: list[Faction] = list(map(lambda record: Faction(record[0], record[1]), factions))
+            return factionsList
+        except Exception as ex:
+            logging.error(f'error in retrieving factions: {ex}')
             return []
 
     def addCharacterTeam(self, characterTeam: CharacterTeam):
@@ -205,7 +226,8 @@ class PersistenceManager:
         try:
             chars = self.getAllCharacters()
             teamRecords = self.getCharacterTeamRecords()
-            return StorageEntity(chars, teamRecords)
+            factions = self.getAllFactions()
+            return StorageEntity(chars, teamRecords, factions)
         except Exception as ex:
             logging.error(f'error in retrieving storage entity: {ex}')
             return StorageEntity([])
