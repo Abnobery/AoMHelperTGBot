@@ -203,21 +203,21 @@ class PersistenceManager:
             return []
 
     def characterTeamRecordForTeam(self, team):
-        sqlStatement = 'select leader, slot2, slot3, slot4, slot5 from teams left join ' \
-                       '(select counter_teams.counterteamid from teams left join ' \
-                       'counter_teams on teams.id = counter_teams.targetteamid ' \
-                       f'where counter_teams.targetteamid = {team[0]}) AS res ON teams.id = res.counterteamid ' \
-                       'where teams.id=res.counterteamid'
+        sqlStatement = 'select leader, slot2, slot3, slot4, slot5 from heroes_teams left join ' \
+                       '(select heroes_counter_teams.counterteamid from heroes_teams left join ' \
+                       'heroes_counter_teams on heroes_teams.id = heroes_counter_teams.targetteamid ' \
+                       f'where heroes_counter_teams.targetteamid = {team[0]}) AS res ON heroes_teams.id = res.counterteamid ' \
+                       'where heroes_teams.id=res.counterteamid'
         counterTeams = self.storage.execute(text(sqlStatement)).all()
         counterCharTeams = list(map(lambda x: CharacterTeam(x), counterTeams))
         return CharacterTeamRecord(CharacterTeam(team[1:]), counterCharTeams)
 
     def teamEffectiveVersusTeams(self, teamId):
-        sqlStatement = 'select leader, slot2, slot3, slot4, slot5 from teams left join ' \
-                       '(select counter_teams.targetteamid from counter_teams ' \
-                       f'where counter_teams.counterteamid = {teamId})' \
-                       'as effective on teams.id = effective.targetteamid ' \
-                       'where teams.id = effective.targetteamid'
+        sqlStatement = 'select leader, slot2, slot3, slot4, slot5 from heroes_teams left join ' \
+                       '(select heroes_counter_teams.targetteamid from heroes_counter_teams ' \
+                       f'where heroes_counter_teams.counterteamid = {teamId})' \
+                       'as effective on heroes_teams.id = effective.targetteamid ' \
+                       'where heroes_teams.id = effective.targetteamid'
         effectiveTeams = self.storage.execute(text(sqlStatement)).all()
         effectiveCharTeams = list(map(lambda x: CharacterTeam(x), effectiveTeams))
         return effectiveCharTeams
